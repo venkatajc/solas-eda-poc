@@ -1,16 +1,17 @@
-name: Generate HTML Report
+name: Generate EDA Report
 
 on:
-  push:
-    paths:
-      - eda_report.py
+  workflow_dispatch:
+    inputs:
+      dataset:
+        description: 'Dataset name (e.g., iris, wine, titanic)'
+        required: true
 
 jobs:
-  run-report:
+  generate-report:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -20,13 +21,14 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run report script
-        run: python eda_report.py
-
-      - name: Commit and push report
+      - name: Run EDA Report Script
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add docs/simple_eda_report.html
-          git commit -m "Auto-generated HTML EDA report"
+          python eda_report.py ${{ github.event.inputs.dataset }}
+
+      - name: Commit report
+        run: |
+          git config user.name github-actions
+          git config user.email actions@github.com
+          git add docs/
+          git commit -m "Auto-generated report for ${{ github.event.inputs.dataset }}"
           git push
