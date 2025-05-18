@@ -24,7 +24,10 @@ jobs:
 
       - name: Run EDA Report
         run: python eda_report.py ${{ github.event.inputs.dataset }}
-
+       
+      - name: Generate index.html
+        run: python generate_index.py  
+        
       - name: Commit report
         run: |
           git config user.name github-actions
