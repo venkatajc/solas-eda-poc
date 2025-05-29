@@ -1,3 +1,24 @@
+**** 
+Run_Solas_Notebook:
+    name: Run Solas AI Report Generator
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.table_name_list != '' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Trigger Solas AI notebook in Databricks
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: |
+          databricks jobs run-now \
+            --job-id <YOUR_JOB_ID> \
+            --notebook-params "{\"table_name_list\": \"${{ github.event.inputs.table_name_list }}\"}"
+*******************************
+
+
 from datetime import datetime
 import os
 
