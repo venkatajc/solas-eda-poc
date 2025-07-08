@@ -8,8 +8,14 @@ auth_url="https://atscale.gov-solutions-dev.aws.zilverton.com:10500/default/auth
 put_url="https://atscale.gov-solutions-dev.aws.zilverton.com:10502/connection-groups/orgid/default"
 
 # Get Bearer Token
-response=$(curl -s -u "$username:$password" "$auth_url")
+# Manually encode username:password to base64
+basic_auth=$(echo -n "$username:$password" | base64)
+auth_header="Authorization: Basic $basic_auth"
+
+# Call auth URL with explicit Authorization header
+response=$(curl -s -H "$auth_header" "$auth_url")
 status=$?
+
 
 if [ $status -ne 0 ]; then
     echo "Failed to get token, curl error code: $status"
