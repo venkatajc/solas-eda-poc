@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# Encode username and password for Basic Auth
+username="admin"
+password='w$gF3R5sto@g4}3L'  # Single quotes prevent special char expansion
+
+auth_url="https://atscale.gov-solutions-dev.aws.zilverton.com:10500/default/auth"
+put_url="https://atscale.gov-solutions-dev.aws.zilverton.com:10502/connection-groups/orgid/default"
+
+# Get Bearer Token
+response=$(curl -s -u "$username:$password" "$auth_url")
+status=$?
+
+if [ $status -ne 0 ]; then
+    echo "Failed to get token, curl error code: $status"
+    exit 1
+fi
+
+bearer_token=$(echo "$response" | tr -d '\n')
+echo "Bearer Token: $bearer_token"
+
+# Prepare JSON payload
+read -r -d '' payload <<EOF
+{
+  "name": "main",
+  "hosts": "silverton-databricks-gedp-dev.cloud.databricks.com",
+  "port": 443,
+  "connectorType": "databrickssql",
+  "username": "token",
+  "isKerberosClientEnabled": false,
+  "extraJdbcFlags": "httpPath=/sql/1.0/warehouses/6b17267f914ba3cc",
+  "database": "gedp_dev",
+  "queryRoles": [
+    "system_query_role",
+    "small_user_query_role",
+    "large_user_query_role"
+  ],
+  "extraProperties": {
+    "storageFormat": "delta"
+  },
+  "secretProperties": {
+    "password": "asdffdpa1e461b8bf9dc78dd391f0ef93fd6e2781"
+  },
+  "secretRefs": {}
+}
+EOF
+
+# Send PUT request
+put_response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X PUT "$put_url" \
+  -H "Authorization: Bearer $bearer_token" \
+  -H "Content-Type: application/json" \
+  -d "$payload")
+
+# Extract HTTP status
+http_status=$(echo "$put_response" | sed -n 's/.*HTTP_STATUS://p')
+response_body=$(echo "$put_response" | sed 's/HTTP_STATUS:.*//')
+
+echo -e "\nPUT Response Code: $http_status"
+echo -e "\nPUT Response Body:\n$response_body"
