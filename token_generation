@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Inputs
+username="admin"
+password='vt2117ABTBwi8fs*#U8zm'
+auth_url="https://atscale.gov-solutions-dev.aws.zilverton.com:10500/default/auth"
+base_url="https://atscale.gov-solutions-dev.aws.zilverton.com:10502"
+
+# Get bearer token
+bearer_token=$(curl -s -u $username:$password -X GET "$auth_url")
+
+# GET all connection groups
+response=$(curl -s -X GET "$base_url/connection-groups/orgId/default" \
+  -H "Authorization: Bearer $bearer_token")
+
+# Extract Connection Group ID by connection name
+connection_name="gedp_dev"
+connection_group_id=$(echo "$response" | jq -r ".response.results[].values[] | select(.name == \"$connection_name\") | .id")
+
+# Extract Sub Group ID by sub-name (e.g., "main")
+sub_group_id=$(echo "$response" | jq -r ".response.results[].values[] | select(.name == \"$connection_name\") | .subGroups[] | select(.name == \"main\") | .id")
+
+echo "Connection Group ID: $connection_group_id"
+echo "Sub Group ID: $sub_group_id"
