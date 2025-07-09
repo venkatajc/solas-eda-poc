@@ -5,20 +5,22 @@ username="admin"
 password='vt2117ABTBwi8fs*#U8zm'
 auth_url="https://atscale.gov-solutions-dev.aws.zilverton.com:10500/default/auth"
 base_url="https://atscale.gov-solutions-dev.aws.zilverton.com:10502"
+connection_name="gedp_dev"
+subgroup_name="main"
 
 # Get bearer token
 bearer_token=$(curl -s -u $username:$password -X GET "$auth_url")
 
-# GET all connection groups
+# Get full connection group JSON
 response=$(curl -s -X GET "$base_url/connection-groups/orgId/default" \
   -H "Authorization: Bearer $bearer_token")
 
-# Extract Connection Group ID by connection name
-connection_name="gedp_dev"
-connection_group_id=$(echo "$response" | jq -r ".response.results[].values[] | select(.name == \"$connection_name\") | .id")
+# Extract connection_group_id (line after match with connection name)
+connection_group_id=$(echo "$response" | grep -A 5 "\"name\": \"$connection_name\"" | grep '"id"' | head -n 1 | sed 's/.*"id": "\(.*\)".*/\1/')
 
-# Extract Sub Group ID by sub-name (e.g., "main")
-sub_group_id=$(echo "$response" | jq -r ".response.results[].values[] | select(.name == \"$connection_name\") | .subGroups[] | select(.name == \"main\") | .id")
+# Extract sub_group_id inside that block (based on subgroup name)
+sub_group_id=$(echo "$response" | grep -A 10 "\"name\": \"$connection_name\"" | grep -A 5 "\"name\": \"$subgroup_name\"" | grep '"id"' | head -n 1 | sed 's/.*"id": "\(.*\)".*/\1/')
 
+# Output
 echo "Connection Group ID: $connection_group_id"
 echo "Sub Group ID: $sub_group_id"
